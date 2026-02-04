@@ -22,7 +22,7 @@ async function callDeepSeek(
   userPrompt: string,
   jsonMode: boolean = true
 ): Promise<any> {
-  const TIMEOUT_MS = 20000; // 20秒超时
+  const TIMEOUT_MS = 15000; // 15秒超时（优化后的精简prompt）
 
   try {
     // 创建 AbortController 用于超时控制
@@ -104,55 +104,31 @@ export async function generateClinicalCase(rank: string): Promise<any> {
   if (template) {
     // 基于模板生成病例
     systemPrompt = `
-你是一位资深兽医教授。
-任务：基于提供的疾病模板，生成一个真实的临床病例，用于考核 ${rank} 级别的兽医学生。
-语言：简体中文
-格式：严格的JSON格式
+你是兽医教授。基于疾病模板生成临床病例JSON，用于${rank}级别考核。
+语言：中文。格式：JSON。**极简输出**。
 
-要求：
-1. **创造独特的病例**：每次生成的病例都应该有不同的品种、年龄、体重、主人性格等
-2. **体格检查、化验数据必须符合该疾病的典型表现**，但要有个体差异
-3. **生成3-5个不同的问诊对话选项**，每次对话都要有变化
-4. 确保所有数据真实可信，符合兽医临床标准
-5. **避免生成重复或相似的病例**，要有创意和多样性
+**精简要求**：
+1. 生成独特病例（不同品种、年龄、体重）
+2. dialogue只需2个关键问诊
+3. physicalExam每项最多15字
+4. cbcSummary和chemSummary用一句话概括关键异常
 
 JSON结构：
 {
-  "species": "犬" | "猫",
-  "breed": "品种名",
+  "species": "犬"|"猫",
+  "breed": "品种",
   "age": "年龄",
   "sex": "公/母",
   "weightKg": number,
-  "ownerPersona": "主人性格(如焦虑型/淡定型/健谈型)",
+  "ownerPersona": "性格",
   "chiefComplaint": "主诉",
-  "historySecret": "需要通过问诊才能获取的关键病史",
-  "dialogue": [
-    { "question": "兽医可以问的问题", "answer": "主人的回答", "topic": "话题类型(如饮食/疫苗/症状持续时间)" }
-  ],
-  "physicalExam": {
-    "visual": "视诊所见",
-    "auscultation": "听诊所见",
-    "palpation": "触诊所见",
-    "olfaction": "嗅诊所见",
-    "woodsLamp": "伍德氏灯检查结果(如不适用可写'未进行')"
-  },
-  "tpr": {
-    "temp": number,
-    "hr": number,
-    "rr": number,
-    "mm": "粘膜颜色",
-    "crt": "毛细血管再充盈时间",
-    "bp": "血压值(如 120)"
-  },
-  "cbc": [
-    { "name": "指标名", "value": "数值", "unit": "单位", "refRange": "参考范围", "flag": "H"|"L"|"N" }
-  ],
-  "chem": [ ...同上结构... ],
-  "bloodGas": [ ...同上结构，仅危重病例需要 ],
-  "imaging": {
-    "xrayDescription": "X光影像描述",
-    "usgDescription": "B超描述(如适用)"
-  },
+  "historySecret": "病史",
+  "dialogue": [{"question":"问题","answer":"回答","topic":"话题"}],
+  "physicalExam": {"visual":"","auscultation":"","palpation":"","olfaction":""},
+  "tpr": {"temp":number,"hr":number,"rr":number,"mm":"","crt":""},
+  "cbcSummary": "WBC 25.0↑，HCT 35%，PLT正常",
+  "chemSummary": "ALT 180↑，BUN/CREA正常",
+  "xraySummary": "X光所见概述",
   "difficulty": ${template.difficulty}
 }
     `.trim();
@@ -174,54 +150,32 @@ JSON结构：
     console.warn('数据库中没有找到合适的模板，使用AI直接生成');
 
     systemPrompt = `
-你是一位资深兽医教授。
-任务：生成一个逼真的兽医临床病例，用于考核 ${rank} 级别的学生。
-语言：简体中文
-格式：严格的JSON格式
+你是兽医教授。生成临床病例JSON，用于${rank}级别考核。
+语言：中文。格式：JSON。**极简输出**。
 
-要求：
-1. 数据真实，符合生理参考范围
-2. 包含完整的体格检查和生命体征
-3. 如果病情危重，在bloodGas中生成血气分析数据；否则为空数组
-4. 确保逻辑自洽：化验数据必须支持临床症状
-5. 生成3-5个问诊对话选项
+**精简要求**：
+1. 数据真实，符合生理范围
+2. dialogue只需2个关键问诊
+3. physicalExam每项最多15字
+4. cbcSummary和chemSummary用一句话概括
 
 JSON结构：
 {
-  "species": "犬" | "猫",
-  "breed": "品种名",
+  "species": "犬"|"猫",
+  "breed": "品种",
   "age": "年龄",
   "sex": "公/母",
   "weightKg": number,
-  "ownerPersona": "主人性格",
+  "ownerPersona": "性格",
   "chiefComplaint": "主诉",
-  "historySecret": "隐藏病史",
-  "dialogue": [
-    { "question": "兽医问题", "answer": "主人回答", "topic": "话题" }
-  ],
-  "physicalExam": {
-    "visual": "视诊",
-    "auscultation": "听诊",
-    "palpation": "触诊",
-    "olfaction": "嗅诊",
-    "woodsLamp": "伍德氏灯"
-  },
-  "tpr": {
-    "temp": number,
-    "hr": number,
-    "rr": number,
-    "mm": "粘膜",
-    "crt": "CRT",
-    "bp": "血压"
-  },
-  "cbc": [ { "name": "", "value": "", "unit": "", "refRange": "", "flag": "" } ],
-  "chem": [ ... ],
-  "bloodGas": [ ... ],
-  "imaging": {
-    "xrayDescription": "",
-    "usgDescription": ""
-  },
-  "difficulty": number (1-5)
+  "historySecret": "病史",
+  "dialogue": [{"question":"问题","answer":"回答","topic":"话题"}],
+  "physicalExam": {"visual":"","auscultation":"","palpation":"","olfaction":""},
+  "tpr": {"temp":number,"hr":number,"rr":number,"mm":"","crt":""},
+  "cbcSummary": "WBC↑，HCT正常",
+  "chemSummary": "ALT↑，肾功能正常",
+  "xraySummary": "X光所见",
+  "difficulty": number
 }
     `.trim();
 

@@ -11,10 +11,7 @@ console.log(`  - DEEPSEEK_API_KEY: ${process.env.DEEPSEEK_API_KEY ? '已设置 �
 console.log(`  - SUPABASE_URL: ${process.env.SUPABASE_URL ? '已设置 ✓' : '未设置 ✗'}`);
 console.log(`  - SUPABASE_ANON_KEY: ${process.env.SUPABASE_ANON_KEY ? '已设置 ✓' : '未设置 ✗'}`);
 
-// 第二步：导入其他模块
-import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import apiRoutes from './routes/api';
+// 第二步：创建应用实例
 
 const app = express();
 const PORT = process.env.PORT || 3000;

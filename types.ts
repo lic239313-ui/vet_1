@@ -77,6 +77,13 @@ export interface ClinicalCase {
     crt: string; // Capillary Refill Time
     bp?: string; // Blood Pressure (e.g. 120/80)
   };
+
+  // New summary fields (optimized for faster generation)
+  cbcSummary?: string;   // 血常规概述，如 "WBC 25.0↑，HCT 35%，PLT正常"
+  chemSummary?: string;  // 生化概述，如 "ALT 180↑，BUN/CREA正常"
+  xraySummary?: string;  // X光概述
+
+  // Legacy array fields (kept for backward compatibility)
   cbc?: LabResultItem[]; // Complete Blood Count
   chem?: LabResultItem[]; // Biochemistry
   bloodGas?: LabResultItem[]; // Blood Gas Analysis

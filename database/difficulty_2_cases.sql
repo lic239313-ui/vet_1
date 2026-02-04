@@ -1,0 +1,343 @@
+-- ============================================================
+-- 难度2 病例模板 - 中等病例
+-- 生成日期: 2026-02-02
+-- 共 10 个病例
+-- ============================================================
+
+-- 1. 犬开放型子宫蓄脓
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '犬',
+  '开放型子宫蓄脓',
+  2,
+  '{
+    "chiefComplaint": "发情结束两个月了，但这几天阴部一直流脓，喝水特别多。",
+    "physicalExam": {
+      "visual": "精神稍差，阴门红肿，流出灰白色或血性脓液。",
+      "auscultation": "正常。",
+      "palpation": "腹部触诊子宫角轻度增粗，腹壁稍紧张。",
+      "olfaction": "阴道分泌物有明显的腥臭味。"
+    },
+    "tpr": {
+      "temp": 39.2,
+      "hr": 110,
+      "rr": 30,
+      "mm": "稍苍白",
+      "crt": "2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "WBC": "30.0 x10^9/L (显著升高)", "NEU": "核左移" },
+    "chem": { "GLOB": "球蛋白升高" },
+    "其他检查": "腹部B超：可见子宫壁增厚，腔内有低回声液性暗区（积液）。"
+  }'::jsonb,
+  '1. 术前稳定：静脉输液纠正脱水，使用抗生素（如阿莫西林克拉维酸钾）。
+2. 手术治疗（首选）：卵巢子宫摘除术 (OHE)。
+3. 术后护理：抗感染、止痛，监测排脓情况。',
+  '开放型子宫蓄脓 (Open Pyometra)'
+);
+
+-- 2. 猫特发性膀胱炎 (FIC)
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '猫',
+  '猫特发性膀胱炎 (FIC)',
+  2,
+  '{
+    "chiefComplaint": "家里来了客人后，猫就开始随地乱尿，尿里带血，好像很痛。",
+    "physicalExam": {
+      "visual": "频繁去猫砂盆蹲姿，每次只尿一点点，舔舐尿道口。",
+      "auscultation": "正常。",
+      "palpation": "膀胱空虚或仅有少量尿液，触诊膀胱壁增厚、敏感。",
+      "olfaction": "无特殊。"
+    },
+    "tpr": {
+      "temp": 38.5,
+      "hr": 160,
+      "rr": 30,
+      "mm": "粉红",
+      "crt": "<2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "结果": "正常" },
+    "chem": { "结果": "正常（排除肾衰）" },
+    "urinalysis": { "RBC": "满视野（血尿）", "Bacteria": "阴性（排除细菌感染）" },
+    "其他检查": "腹部B超：膀胱壁弥漫性增厚，腔内可见悬浮颗粒，无结石影像。"
+  }'::jsonb,
+  '1. 止痛/解痉：加巴喷丁 (Gabapentin) 5-10mg/kg PO, BID（抗应激+止痛）。
+2. 缓解平滑肌痉挛：哌唑嗪 (Prazosin)。
+3. 环境管理（关键）：增加费洛蒙（Feliway），增加水源，减少应激源。',
+  '猫特发性膀胱炎 (Feline Idiopathic Cystitis, FIC)'
+);
+
+-- 3. 犬胰腺炎（轻中度）
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '犬',
+  '胰腺炎（轻中度）',
+  2,
+  '{
+    "chiefComplaint": "昨天偷吃了红烧肉，今天开始呕吐，趴在地上的姿势很奇怪（祈祷姿势）。",
+    "physicalExam": {
+      "visual": "前肢趴地，后肢站立（祈祷姿势/缓解腹痛），精神沉郁。",
+      "auscultation": "肠鸣音减弱。",
+      "palpation": "前腹部（右上腹）触痛明显，腹壁紧张。",
+      "olfaction": "呕吐物酸臭味。"
+    },
+    "tpr": {
+      "temp": 39.4,
+      "hr": 120,
+      "rr": 35,
+      "mm": "粉红",
+      "crt": "<2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "WBC": "轻度升高（炎症）" },
+    "chem": { "AMY/LIPA": "升高（特异性不高）" },
+    "其他检查": "cPL (犬胰腺脂肪酶)：阳性/强阳性（金标准）。"
+  }'::jsonb,
+  '1. 液体疗法：积极输液纠正脱水和电解质紊乱。
+2. 止痛：布托啡诺 或 吗啡（胰腺炎极其疼痛，必须止痛）。
+3. 止吐与营养：马罗匹坦止吐，尽早给予低脂易消化食物（不建议长期禁食）。',
+  '急性胰腺炎 (Acute Pancreatitis)'
+);
+
+-- 4. 猫杯状病毒感染
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '猫',
+  '猫杯状病毒感染',
+  2,
+  '{
+    "chiefComplaint": "猫咪流口水特别严重，嘴巴很臭，不想吃东西。",
+    "physicalExam": {
+      "visual": "口角流涎，被毛杂乱。张嘴可见舌面、硬腭有鲜红色溃疡灶。",
+      "auscultation": "肺音稍粗。",
+      "palpation": "下颌淋巴结肿大。",
+      "olfaction": "口腔极度恶臭（腐肉味）。"
+    },
+    "tpr": {
+      "temp": 39.8,
+      "hr": 150,
+      "rr": 28,
+      "mm": "粉红",
+      "crt": "<2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "WBC": "升高（继发细菌感染）" },
+    "chem": { "结果": "正常" },
+    "其他检查": "PCR检测：FCV阳性。"
+  }'::jsonb,
+  '1. 支持疗法：输液维持水合状态。
+2. 疼痛管理与抗炎：美洛昔康 (Metacam) 皮下注射（需确认肾功能）或 丁丙诺啡。
+3. 抗生素：多西环素或阿莫西林克拉维酸钾（控制继发感染）。
+4. 局部护理：口腔喷剂缓解溃疡疼痛。',
+  '猫杯状病毒感染 (Feline Calicivirus, FCV)'
+);
+
+-- 5. 犬髌骨脱位
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '犬',
+  '髌骨脱位',
+  2,
+  '{
+    "chiefComplaint": "走路有时候后腿会突然抬起来三脚跳，跳几下又好了。",
+    "physicalExam": {
+      "visual": "站立时后肢呈O型腿（膝内翻），行走可见间歇性跛行。",
+      "auscultation": "正常。",
+      "palpation": "伸屈膝关节时可感觉到髌骨滑出滑车沟，有咔哒感。",
+      "olfaction": "无特殊。"
+    },
+    "tpr": {
+      "temp": 38.2,
+      "hr": 90,
+      "rr": 20,
+      "mm": "粉红",
+      "crt": "<2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "结果": "正常" },
+    "chem": { "结果": "正常" },
+    "其他检查": "DR (X光)：正位片可见髌骨位于滑车沟内侧（不在正中间）。"
+  }'::jsonb,
+  '1. 药物保守（轻度）：软骨素、非甾体抗炎药 (NSAIDs) 缓解疼痛。
+2. 体重控制：减轻关节负担。
+3. 手术治疗（3级以上）：滑车沟加深术 + 胫骨结节移位术。',
+  '内侧髌骨脱位 (Medial Patellar Luxation, MPL)'
+);
+
+-- 6. 猫甲状腺机能亢进
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '猫',
+  '甲状腺机能亢进',
+  2,
+  '{
+    "chiefComplaint": "老猫最近胃口特别好，吃得巨多，但是身体却越来越瘦，脾气也变暴躁了。",
+    "physicalExam": {
+      "visual": "消瘦，被毛无光泽，甚至有点亢奋、多动。",
+      "auscultation": "心率极快（>220 bpm），可能有奔马律或心杂音。",
+      "palpation": "颈部气管两侧可触摸到游离的、绿豆至黄豆大小的结节（甲状腺滑动）。",
+      "olfaction": "无特殊。"
+    },
+    "tpr": {
+      "temp": 38.8,
+      "hr": 230,
+      "rr": 40,
+      "mm": "粉红",
+      "crt": "<2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "RBC": "红细胞压积偏高（红细胞增多症）" },
+    "chem": { "ALT/ALKP": "轻度升高（肝损伤）" },
+    "其他检查": "T4 (总甲状腺素)：显著升高 (>60 nmol/L)。"
+  }'::jsonb,
+  '1. 抗甲状腺药物：甲巯咪唑 (Methimazole) 2.5mg/cat PO, BID。
+2. 心脏管理：若心率过快，可使用β-受体阻滞剂（阿替洛尔）。
+3. 定期监测：每2-3周复查T4和肾功能（治疗可能掩盖肾衰）。',
+  '甲状腺机能亢进 (Hyperthyroidism)'
+);
+
+-- 7. 犬角膜溃疡
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '犬',
+  '角膜溃疡',
+  2,
+  '{
+    "chiefComplaint": "眼睛睁不开，老是用爪子挠眼睛，眼泪汪汪的。",
+    "physicalExam": {
+      "visual": "眼睑痉挛（眯眼），大量流泪，角膜表面可见浑浊或凹坑。",
+      "auscultation": "正常。",
+      "palpation": "眼部极度敏感，抗拒检查。",
+      "olfaction": "无特殊。"
+    },
+    "tpr": {
+      "temp": 38.5,
+      "hr": 100,
+      "rr": 20,
+      "mm": "粉红",
+      "crt": "<2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "结果": "正常" },
+    "chem": { "结果": "正常" },
+    "其他检查": "荧光素钠染色试验 (Fluorescein Stain)：角膜中央出现绿色荧光着色区（阳性）。"
+  }'::jsonb,
+  '1. 抗生素滴眼液：妥布霉素 或 氧氟沙星滴眼液，QID-Q2H（根据严重程度）。
+2. 修复角膜：素高捷疗（小牛血去蛋白提取物）或 透明质酸钠。
+3. 疼痛管理与保护：必须佩戴伊丽莎白圈，防止自残。严禁使用含激素眼药水！',
+  '角膜溃疡 (Corneal Ulcer)'
+);
+
+-- 8. 猫糖尿病
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '猫',
+  '糖尿病',
+  2,
+  '{
+    "chiefComplaint": "猫咪最近喝水超级多，尿得猫砂盆底都粘住了，走路姿势变得怪怪的（足跟贴地）。",
+    "physicalExam": {
+      "visual": "被毛粗乱，虽然有食欲但消瘦。行走呈现蹠行姿势（Plantigrade stance，后脚跟拖地）。",
+      "auscultation": "正常。",
+      "palpation": "肝脏可能轻度肿大（脂肪肝）。",
+      "olfaction": "口腔可能有烂苹果味（酮症，若严重）。"
+    },
+    "tpr": {
+      "temp": 38.3,
+      "hr": 160,
+      "rr": 28,
+      "mm": "粉红",
+      "crt": "<2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "结果": "正常" },
+    "chem": { "GLU": "25 mmol/L (显著高血糖)", "FRU": "果糖胺升高（反映长期血糖）" },
+    "urinalysis": { "Glucose": "4+ (强阳性)", "Ketone": "阴性/弱阳性" }
+  }'::jsonb,
+  '1. 胰岛素治疗：甘精胰岛素 (Glargine) 1-2 U/cat SC, BID。
+2. 饮食管理：更换为高蛋白、低碳水化合物的糖尿病处方粮。
+3. 血糖曲线监测：定期监测血糖曲线调整剂量。',
+  '糖尿病 (Diabetes Mellitus)'
+);
+
+-- 9. 犬甲状腺机能减退
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '犬',
+  '甲状腺机能减退',
+  2,
+  '{
+    "chiefComplaint": "金毛最近越来越胖，不想动，而且身体两侧对称掉毛，尾巴变成了老鼠尾巴。",
+    "physicalExam": {
+      "visual": "肥胖，表情悲伤（粘液性水肿），躯干两侧对称性脱毛，皮肤色素沉着变黑，尾部毛发稀疏。",
+      "auscultation": "心动过缓（心率偏慢）。",
+      "palpation": "皮肤触感凉、厚。",
+      "olfaction": "常并发脂溢性皮炎的酸臭味。"
+    },
+    "tpr": {
+      "temp": 37.8,
+      "hr": 60,
+      "rr": 18,
+      "mm": "苍白",
+      "crt": "2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "RBC": "轻度非再生性贫血" },
+    "chem": { "CHOL": "显著升高 (高胆固醇血症)" },
+    "其他检查": "T4 (总甲状腺素)：降低； TSH (促甲状腺激素)：升高。"
+  }'::jsonb,
+  '1. 激素替代疗法：左旋甲状腺素钠 (Levothyroxine) 0.02 mg/kg PO, BID。
+2. 监测：治疗4周后复查T4浓度，调整剂量。
+3. 皮肤护理：药浴缓解继发的皮肤感染。',
+  '甲状腺机能减退 (Hypothyroidism)'
+);
+
+-- 10. 犬膀胱结石（鸟粪石）
+INSERT INTO case_templates (species, disease_name, difficulty, typical_symptoms, lab_patterns, treatment_guidelines, correct_diagnosis)
+VALUES (
+  '犬',
+  '膀胱结石（鸟粪石）',
+  2,
+  '{
+    "chiefComplaint": "遛狗的时候发现它尿尿很费劲，滴滴答答的，尿里好像有血。",
+    "physicalExam": {
+      "visual": "排尿姿势频繁，尿液呈粉红色。",
+      "auscultation": "正常。",
+      "palpation": "膀胱触诊可能有硬物感（若结石较大），膀胱壁增厚。",
+      "olfaction": "尿液可能有氨味（细菌分解尿素）。"
+    },
+    "tpr": {
+      "temp": 38.6,
+      "hr": 100,
+      "rr": 24,
+      "mm": "粉红",
+      "crt": "<2秒"
+    }
+  }'::jsonb,
+  '{
+    "cbc": { "结果": "正常" },
+    "chem": { "结果": "正常" },
+    "urinalysis": { "pH": "8.0 (碱性尿)", "Sediment": "可见棺材盖状结晶（鸟粪石/磷酸铵镁）" },
+    "其他检查": "X光：膀胱区可见高密度不透射线的结石影像。"
+  }'::jsonb,
+  '1. 饮食溶解（首选于鸟粪石）：饲喂泌尿道处方粮（S/O 或 c/d），酸化尿液溶解结石。
+2. 抗生素治疗：若伴有细菌性膀胱炎，需使用抗生素（如阿莫西林）。
+3. 手术取石：若结石过大无法溶解或为公犬（易阻塞），建议膀胱切开术。',
+  '膀胱结石-鸟粪石 (Canine Struvite Urolithiasis)'
+);
+
+-- ============================================================
+-- 查看难度2病例统计
+-- ============================================================
+-- SELECT disease_name, species FROM case_templates WHERE difficulty = 2;

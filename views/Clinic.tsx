@@ -355,7 +355,7 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
                   const isRevealed = revealedExam.has(item.key);
                   const detail = currentCase?.physicalExam?.[item.key as keyof typeof currentCase.physicalExam];
                   // Check if equipment is needed and owned
-                  const isLocked = item.equip && !hasEquip(item.equip);
+                  const isLocked = !!(item.equip && !hasEquip(item.equip));
 
                   return (
                     <button
@@ -428,26 +428,44 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
                 </h3>
               </div>
 
-              {hasEquip('cbc') && currentCase?.cbc ? (
-                <LabTable title="CBC 血常规" data={currentCase.cbc} />
+              {hasEquip('cbc') ? (
+                currentCase?.cbcSummary ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                    <span className="font-bold text-blue-700 text-sm">CBC 血常规：</span>
+                    <span className="text-slate-700 ml-2">{currentCase.cbcSummary}</span>
+                  </div>
+                ) : currentCase?.cbc ? (
+                  <LabTable title="CBC 血常规" data={currentCase.cbc} />
+                ) : (
+                  <p className="text-slate-400 text-sm">血常规未见明显异常</p>
+                )
               ) : (
                 <LockedData label="CBC 数据未解锁" equipKey="cbc" />
               )}
 
-              {hasEquip('chem') && currentCase?.chem ? (
-                <div className="mt-4">
-                  <LabTable title="Biochemistry 生化" data={currentCase.chem} />
-                </div>
+              {hasEquip('chem') ? (
+                currentCase?.chemSummary ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3 mt-3">
+                    <span className="font-bold text-green-700 text-sm">生化 Chem：</span>
+                    <span className="text-slate-700 ml-2">{currentCase.chemSummary}</span>
+                  </div>
+                ) : currentCase?.chem ? (
+                  <div className="mt-4">
+                    <LabTable title="Biochemistry 生化" data={currentCase.chem} />
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-sm mt-3">生化未见明显异常</p>
+                )
               ) : (
                 <LockedData label="生化数据未解锁" equipKey="chem" />
               )}
 
               {hasEquip('bloodGas') ? (
-                currentCase?.bloodGas ? (
+                currentCase?.bloodGas && currentCase.bloodGas.length > 0 ? (
                   <div className="mt-4">
                     <LabTable title="Blood Gas 血气分析" data={currentCase.bloodGas} />
                   </div>
-                ) : null // Case might not have blood gas data generated if not severe
+                ) : null
               ) : (
                 <LockedData label="血气分析未解锁" equipKey="bloodGas" />
               )}
@@ -461,7 +479,7 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
               </h3>
               {hasEquip('xray') ? (
                 <p className="font-mono text-sm text-slate-800 bg-black/5 p-3 rounded border border-black/10">
-                  X-RAY REPORT: {currentCase?.imaging?.xrayDescription || "未见明显异常 (NAD)"}
+                  X-RAY REPORT: {currentCase?.xraySummary || currentCase?.imaging?.xrayDescription || "未见明显异常 (NAD)"}
                 </p>
               ) : <LockedData label="X光影像未解锁" equipKey="xray" />}
             </div>
