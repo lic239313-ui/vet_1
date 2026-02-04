@@ -1,73 +1,325 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>智能兽医大亨 (Vet Tycoon AI)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-      :root {
-        --game-bg: #e0f2fe;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>智能兽医大亨 (Vet Tycoon AI)</title>
+  <meta name="description" content="体验专业兽医临床轮转，掌握SOAP诊疗流程，成为顶尖兽医专家" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      /* Primary Palette - Medical Teal */
+      --primary: #0891B2;
+      --primary-light: #22D3EE;
+      --primary-dark: #0E7490;
+      --primary-darker: #155E75;
+
+      /* Success/CTA - Health Green */
+      --success: #22C55E;
+      --success-light: #4ADE80;
+      --success-dark: #16A34A;
+
+      /* Warning & Error */
+      --warning: #F59E0B;
+      --warning-light: #FCD34D;
+      --error: #EF4444;
+      --error-light: #FCA5A5;
+
+      /* Backgrounds */
+      --bg-main: #F0FDFA;
+      --bg-card: #FFFFFF;
+      --bg-elevated: #ECFDF5;
+      --bg-muted: #F1F5F9;
+
+      /* Text */
+      --text-primary: #134E4A;
+      --text-secondary: #115E59;
+      --text-muted: #64748B;
+      --text-light: #94A3B8;
+
+      /* Accent Colors */
+      --accent-gold: #F59E0B;
+      --accent-purple: #8B5CF6;
+      --accent-blue: #3B82F6;
+      --accent-pink: #EC4899;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      --shadow-glow: 0 0 20px rgba(8, 145, 178, 0.3);
+    }
+
+    body {
+      font-family: 'Figtree', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, var(--bg-main) 0%, #CCFBF1 50%, var(--bg-main) 100%);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      overscroll-behavior: none;
+      min-height: 100vh;
+    }
+
+    /* Subtle pattern overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(8, 145, 178, 0.08) 1px, transparent 0);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(8, 145, 178, 0.05);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(to bottom, var(--primary), var(--primary-dark));
+      border-radius: 10px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-dark);
+    }
+
+    /* Game Card - Enhanced */
+    .game-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 1.25rem;
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(8, 145, 178, 0.1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .game-card:hover {
+      box-shadow: var(--shadow-lg);
+      border-color: rgba(8, 145, 178, 0.2);
+    }
+
+    /* Button Styles - Enhanced */
+    .btn-game {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-bottom-width: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-game:active:not(:disabled) {
+      transform: translateY(2px);
+      border-bottom-width: 0px;
+      margin-top: 2px;
+      margin-bottom: 2px;
+    }
+
+    .btn-game:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to bottom, var(--primary), var(--primary-dark));
+      color: white;
+      border-color: var(--primary-darker);
+      box-shadow: 0 4px 14px 0 rgba(8, 145, 178, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(to bottom, var(--primary-light), var(--primary));
+      box-shadow: 0 6px 20px 0 rgba(8, 145, 178, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: linear-gradient(to bottom, var(--success), var(--success-dark));
+      color: white;
+      border-color: #15803D;
+      box-shadow: 0 4px 14px 0 rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: linear-gradient(to bottom, var(--success-light), var(--success));
+      box-shadow: 0 6px 20px 0 rgba(34, 197, 94, 0.4);
+    }
+
+    /* Animations */
+    @keyframes popIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(10px);
       }
-      body {
-        font-family: 'Nunito', 'Microsoft YaHei', sans-serif;
-        background-color: var(--game-bg);
-        background-image: radial-gradient(#bae6fd 2px, transparent 2px);
-        background-size: 24px 24px;
-        overscroll-behavior: none;
+
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
       }
-      /* Custom scrollbar */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+    }
+
+    @keyframes slideUp {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
       }
-      ::-webkit-scrollbar-track {
-        background: transparent;
+
+      100% {
+        opacity: 1;
+        transform: translateY(0);
       }
-      ::-webkit-scrollbar-thumb {
-        background: #94a3b8;
-        border-radius: 10px;
+    }
+
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
       }
-      
-      /* Game UI Utilities */
-      .game-card {
-        background: white;
-        border-radius: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        border: 2px solid #f1f5f9;
+
+      100% {
+        opacity: 1;
       }
-      
-      .btn-game {
-        transition: all 0.1s;
-        border-bottom-width: 4px;
+    }
+
+    @keyframes pulse-glow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.4);
       }
-      .btn-game:active:not(:disabled) {
-        transform: translateY(2px);
-        border-bottom-width: 0px;
-        margin-top: 2px;
-        margin-bottom: 2px;
+
+      50% {
+        box-shadow: 0 0 20px 5px rgba(8, 145, 178, 0.2);
       }
-      .btn-primary {
-        background-color: #0d9488; /* teal-600 */
-        color: white;
-        border-color: #0f766e; /* teal-700 */
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
       }
-      .btn-primary:hover {
-        background-color: #14b8a6;
+
+      100% {
+        background-position: 200% 0;
       }
-      
-      /* Animations */
-      @keyframes popIn {
-        0% { opacity: 0; transform: scale(0.9); }
-        100% { opacity: 1; transform: scale(1); }
+    }
+
+    .animate-pop {
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .animate-slide-up {
+      animation: slideUp 0.5s ease-out;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .animate-pulse-glow {
+      animation: pulse-glow 2s infinite;
+    }
+
+    /* Skeleton Loading */
+    .skeleton {
+      background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 0.5rem;
+    }
+
+    /* Glass Effect */
+    .glass {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .glass-dark {
+      background: rgba(15, 118, 110, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    /* Focus States for Accessibility */
+    *:focus-visible {
+      outline: 3px solid var(--primary-light);
+      outline-offset: 2px;
+    }
+
+    button:focus-visible {
+      outline: 3px solid var(--primary-light);
+      outline-offset: 2px;
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
       }
-      .animate-pop {
-        animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      }
-    </style>
+    }
+
+    /* Hover utilities */
+    .hover-lift {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+    }
+
+    /* Badge styles */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success-dark);
+    }
+
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #B45309;
+    }
+
+    .badge-error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #DC2626;
+    }
+
+    .badge-info {
+      background: rgba(8, 145, 178, 0.15);
+      color: var(--primary-dark);
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -80,8 +332,10 @@
 }
 </script>
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

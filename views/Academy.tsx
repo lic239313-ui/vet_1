@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
 import { GameState } from '../types';
 import { getExamQuestions, submitExamAnswer } from '../services/apiClient';
-import { AcademicCapIcon, ChevronRightIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
+import {
+  AcademicCapIcon,
+  ChevronRightIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  BookOpenIcon,
+  ClockIcon,
+  SparklesIcon
+} from '@heroicons/react/24/solid';
 
 interface AcademyProps {
   gameState: GameState;
@@ -42,10 +50,10 @@ const Academy: React.FC<AcademyProps> = ({ gameState, updateState }) => {
 
   // 执业兽医资格证考试四个科目
   const subjects = [
-    { value: '基础兽医学', label: '科目一：基础兽医学', icon: '🔬' },
-    { value: '预防兽医学', label: '科目二：预防兽医学', icon: '💉' },
-    { value: '临床兽医学', label: '科目三：临床兽医学', icon: '🏥' },
-    { value: '综合应用', label: '科目四：综合应用', icon: '📋' }
+    { value: '基础兽医学', label: '科目一', sublabel: '基础兽医学', icon: '🔬', color: 'from-cyan-500 to-blue-600', bgLight: 'bg-cyan-50', borderColor: 'border-cyan-300' },
+    { value: '预防兽医学', label: '科目二', sublabel: '预防兽医学', icon: '💉', color: 'from-teal-500 to-emerald-600', bgLight: 'bg-teal-50', borderColor: 'border-teal-300' },
+    { value: '临床兽医学', label: '科目三', sublabel: '临床兽医学', icon: '🏥', color: 'from-green-500 to-emerald-600', bgLight: 'bg-green-50', borderColor: 'border-green-300' },
+    { value: '综合应用', label: '科目四', sublabel: '综合应用', icon: '📋', color: 'from-violet-500 to-purple-600', bgLight: 'bg-violet-50', borderColor: 'border-violet-300' }
   ];
 
 
@@ -188,43 +196,50 @@ const Academy: React.FC<AcademyProps> = ({ gameState, updateState }) => {
   const currentQuestion = examStarted && questions.length > 0 ? questions[currentQuestionIndex] : null;
 
   return (
-    <div className="h-full overflow-y-auto p-4 md:p-8">
+    <div className="h-full overflow-y-auto p-4 md:p-6">
       <div className="flex flex-col gap-6 min-h-full max-w-4xl mx-auto">
 
-        {/* 选择界面 */}
+        {/* 选择界面 - Enhanced */}
         {!examStarted && !loading && (
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+          <div className="game-card p-6 md:p-8 animate-fade-in">
             <div className="mb-8 text-center">
-              <h2 className="text-2xl font-bold text-slate-800 flex items-center justify-center gap-2">
-                <AcademicCapIcon className="w-8 h-8 text-blue-600" />
-                执业兽医资格证考试 - 真题练习
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-violet-600 rounded-2xl shadow-lg mb-4">
+                <AcademicCapIcon className="w-9 h-9 text-white" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">
+                执业兽医资格证考试
               </h2>
-              <p className="text-slate-500 mt-2">
+              <p className="text-slate-500 mt-2 font-medium">
                 真题题库系统，包含单选题、多选题和共用题干题
               </p>
             </div>
 
             {/* 筛选条件 */}
             <div className="space-y-6">
-              {/* 科目选择 - 选项卡样式 */}
+              {/* 科目选择 - 增强卡片样式 */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-3">选择考试科目</label>
+                <label className="block text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                  <BookOpenIcon className="w-4 h-4 text-blue-600" />
+                  选择考试科目
+                </label>
                 <div className="grid grid-cols-2 gap-3">
                   {subjects.map(s => (
                     <button
                       key={s.value}
                       onClick={() => setSelectedSubject(s.value)}
-                      className={`p-4 rounded-xl border-2 transition-all text-left ${selectedSubject === s.value
-                        ? 'border-blue-500 bg-blue-50 shadow-md'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      className={`p-4 rounded-xl border-2 transition-all text-left cursor-pointer hover:-translate-y-1 ${selectedSubject === s.value
+                        ? `${s.borderColor} ${s.bgLight} shadow-lg`
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md'
                         }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{s.icon}</span>
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-2xl shadow-md`}>
+                          {s.icon}
+                        </div>
                         <div>
-                          <div className={`font-bold text-sm ${selectedSubject === s.value ? 'text-blue-700' : 'text-slate-700'
-                            }`}>
-                            {s.label}
+                          <div className="text-xs text-slate-400 font-medium">{s.label}</div>
+                          <div className={`font-bold text-sm ${selectedSubject === s.value ? 'text-slate-800' : 'text-slate-700'}`}>
+                            {s.sublabel}
                           </div>
                         </div>
                       </div>
@@ -235,17 +250,20 @@ const Academy: React.FC<AcademyProps> = ({ gameState, updateState }) => {
 
 
 
-              {/* 题目数量 */}
+              {/* 题目数量 - Enhanced */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">题目数量</label>
-                <div className="flex gap-2">
+                <label className="block text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                  <ClockIcon className="w-4 h-4 text-blue-600" />
+                  题目数量
+                </label>
+                <div className="flex gap-3">
                   {[5, 10, 20].map(count => (
                     <button
                       key={count}
                       onClick={() => setQuestionCount(count)}
-                      className={`flex-1 p-3 rounded-xl border-2 transition-all ${questionCount === count
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold'
-                        : 'border-slate-200 hover:border-slate-300'
+                      className={`flex-1 p-4 rounded-xl border-2 transition-all font-bold cursor-pointer ${questionCount === count
+                        ? 'border-cyan-400 bg-cyan-50 text-cyan-700 shadow-md'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600'
                         }`}
                     >
                       {count} 题
@@ -257,20 +275,34 @@ const Academy: React.FC<AcademyProps> = ({ gameState, updateState }) => {
               <button
                 onClick={handleStartExam}
                 disabled={gameState.energy < 20}
-                className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-200 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-pointer flex items-center justify-center gap-3"
               >
-                {gameState.energy < 20 ? '精力不足' : '开始考试 (-20 精力)'}
+                <SparklesIcon className="w-6 h-6" />
+                {gameState.energy < 20 ? '精力不足' : '开始考试'}
+                <span className="text-blue-200 text-sm font-normal">(-20 精力)</span>
               </button>
             </div>
           </div>
         )}
 
-        {/* 加载中 */}
+        {/* 加载中 - Enhanced */}
         {loading && (
-          <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl p-8 border border-slate-100 min-h-[50vh]">
-            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-6"></div>
-            <h3 className="text-xl font-bold text-slate-700">正在加载题目...</h3>
-            <p className="text-slate-500 mt-2">请稍候</p>
+          <div className="flex-1 flex flex-col items-center justify-center game-card p-8 min-h-[50vh] animate-fade-in">
+            <div className="relative">
+              <div className="w-20 h-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <AcademicCapIcon className="w-8 h-8 text-blue-600 animate-pulse" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-slate-700 mt-6">正在加载题目...</h3>
+            <p className="text-slate-500 mt-2">从题库中抽取 {questionCount} 道题目</p>
+
+            {/* Skeleton */}
+            <div className="mt-8 w-full max-w-md space-y-3">
+              <div className="skeleton h-10 w-full"></div>
+              <div className="skeleton h-8 w-3/4"></div>
+              <div className="skeleton h-8 w-1/2"></div>
+            </div>
           </div>
         )}
 

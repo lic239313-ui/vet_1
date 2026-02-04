@@ -17,7 +17,9 @@ import {
   SpeakerWaveIcon,
   HandRaisedIcon,
   SparklesIcon,
-  LightBulbIcon
+  LightBulbIcon,
+  HeartIcon,
+  ArrowRightIcon
 } from '@heroicons/react/24/solid';
 
 interface ClinicProps {
@@ -153,80 +155,140 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
 
   // Custom UI Component for Locked Data with Buy Action
   const LockedData = ({ label, equipKey }: { label: string, equipKey: string }) => (
-    <div className="p-6 bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center gap-3 text-slate-500 mt-2">
-      <div className="flex items-center gap-2 font-bold text-lg text-slate-600">
-        <LockClosedIcon className="w-5 h-5" /> {label}
+    <div className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-3 text-slate-500 mt-2">
+      <div className="flex items-center gap-2 font-bold text-base text-slate-600">
+        <LockClosedIcon className="w-5 h-5 text-slate-400" /> {label}
       </div>
-      <div className="text-sm">需要设备: <span className="font-bold text-slate-700">{getEquipName(equipKey)}</span></div>
+      <div className="text-sm">需要设备: <span className="font-bold text-cyan-700">{getEquipName(equipKey)}</span></div>
       <button
         onClick={() => onChangeView(GameView.MANAGEMENT)}
-        className="mt-1 flex items-center gap-2 bg-orange-100 text-orange-700 hover:bg-orange-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors"
+        className="mt-1 flex items-center gap-2 bg-amber-100 text-amber-700 hover:bg-amber-200 px-4 py-2 rounded-lg font-bold text-sm transition-all hover:scale-105 cursor-pointer"
       >
         <ShoppingCartIcon className="w-4 h-4" /> 前往采购市场
       </button>
     </div>
   );
 
+  // IDLE State - Enhanced Welcome Screen
   if (stage === 'IDLE') {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-8">
-        <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-xl border-4 border-slate-100 mb-4 animate-pop">
-          <PlayIcon className="w-16 h-16 text-teal-600 ml-2" />
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+        <div className="relative mb-8">
+          <div className="w-36 h-36 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-3xl flex items-center justify-center shadow-2xl border-4 border-white animate-pulse-glow rotate-3">
+            <HeartIcon className="w-16 h-16 text-white drop-shadow-lg" />
+          </div>
+          <div className="absolute -bottom-2 -right-2 w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg border-2 border-cyan-100 -rotate-6">
+            <PlayIcon className="w-8 h-8 text-cyan-600 ml-0.5" />
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-black text-slate-800">VetLogic 临床轮转</h1>
-          <p className="text-slate-500 mt-2 font-medium">请像真正的兽医一样思考 (SOAP 流程)</p>
+
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-cyan-700 via-teal-600 to-cyan-700 bg-clip-text text-transparent">
+            VetLogic 临床轮转
+          </h1>
+          <p className="text-slate-500 mt-3 font-medium text-lg">
+            请像真正的兽医一样思考
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-4 text-sm text-slate-400">
+            <span className="px-3 py-1 bg-cyan-50 text-cyan-700 rounded-full font-semibold">S</span>
+            <ArrowRightIcon className="w-4 h-4" />
+            <span className="px-3 py-1 bg-teal-50 text-teal-700 rounded-full font-semibold">O</span>
+            <ArrowRightIcon className="w-4 h-4" />
+            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full font-semibold">A</span>
+            <ArrowRightIcon className="w-4 h-4" />
+            <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full font-semibold">P</span>
+          </div>
         </div>
-        <button onClick={startCase} className="btn-game btn-primary w-full max-w-md py-4 rounded-xl text-xl font-bold shadow-lg shadow-teal-200">
-          接诊下一位 (-15 精力)
+
+        <button
+          onClick={startCase}
+          className="btn-game btn-primary w-full max-w-md py-4 rounded-2xl text-xl font-bold flex items-center justify-center gap-3 hover-lift"
+        >
+          <PlayIcon className="w-6 h-6" />
+          接诊下一位
+          <span className="text-cyan-200 text-sm font-normal">(-15 精力)</span>
         </button>
+
+        <p className="text-slate-400 text-sm mt-6 max-w-md">
+          每个病例都是AI根据您的职称级别动态生成的真实临床情境
+        </p>
       </div>
     );
   }
 
+  // LOADING State - Enhanced with Skeleton
   if (stage === 'LOADING') {
     return (
-      <div className="h-full flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-teal-500 border-t-transparent"></div>
-        <p className="mt-4 font-mono text-slate-500 text-sm font-bold">正在读取病历系统 (PMS)...</p>
+      <div className="h-full flex flex-col items-center justify-center animate-fade-in">
+        <div className="relative">
+          <div className="w-20 h-20 rounded-full border-4 border-cyan-100 border-t-cyan-500 animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <HeartIcon className="w-8 h-8 text-cyan-500 animate-pulse" />
+          </div>
+        </div>
+        <p className="mt-6 font-bold text-slate-700 text-lg">正在读取病历系统...</p>
+        <p className="text-slate-400 text-sm mt-2">AI正在生成临床病例</p>
+
+        {/* Skeleton Preview */}
+        <div className="mt-8 w-full max-w-md space-y-3">
+          <div className="skeleton h-12 w-full"></div>
+          <div className="skeleton h-8 w-3/4"></div>
+          <div className="skeleton h-8 w-1/2"></div>
+        </div>
       </div>
     );
   }
 
+  // RESULT State - Enhanced Feedback Display
   if (stage === 'RESULT') {
     return (
       <div className="h-full overflow-y-auto p-4 animate-pop">
-        <div className={`game-card p-6 border-l-8 ${evalResult.isCorrect ? 'border-green-500' : 'border-red-500'}`}>
+        <div className={`game-card p-6 border-l-4 ${evalResult.isCorrect ? 'border-l-green-500' : 'border-l-red-500'}`}>
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h2 className="text-2xl font-black text-slate-800">
+              <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+                {evalResult.isCorrect ? (
+                  <CheckCircleIcon className="w-8 h-8 text-green-500" />
+                ) : (
+                  <ExclamationTriangleIcon className="w-8 h-8 text-amber-500" />
+                )}
                 {evalResult.isCorrect ? '诊疗成功' : '诊疗偏差'}
               </h2>
-              <p className="text-slate-500 font-mono text-sm font-bold">得分: {evalResult.score}/100</p>
+              <p className="text-slate-500 font-mono text-sm font-bold mt-1">
+                得分: <span className={evalResult.isCorrect ? 'text-green-600' : 'text-amber-600'}>{evalResult.score}</span>/100
+              </p>
             </div>
-            <div className="text-4xl">{evalResult.isCorrect ? '✅' : '⚠️'}</div>
+            <div className={`text-5xl ${evalResult.isCorrect ? 'animate-bounce' : ''}`}>
+              {evalResult.isCorrect ? '🎉' : '📚'}
+            </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <h3 className="font-bold text-slate-700 mb-2 text-sm uppercase">专家复盘 (Debrief)</h3>
-              <p className="text-slate-700 leading-relaxed text-sm">{evalResult.feedback}</p>
+          <div className="space-y-5">
+            <div className="bg-gradient-to-r from-slate-50 to-cyan-50 p-5 rounded-xl border border-slate-100">
+              <h3 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wide flex items-center gap-2">
+                <ClipboardDocumentCheckIcon className="w-4 h-4 text-cyan-600" />
+                专家复盘
+              </h3>
+              <p className="text-slate-700 leading-relaxed">{evalResult.feedback}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                <span className="text-xs font-bold text-green-700 uppercase">正确诊断</span>
-                <p className="font-medium text-slate-800">{evalResult.correctDiagnosis}</p>
+              <div className="p-4 bg-green-50 rounded-xl border border-green-100">
+                <span className="text-xs font-bold text-green-700 uppercase tracking-wide">正确诊断</span>
+                <p className="font-semibold text-slate-800 mt-1">{evalResult.correctDiagnosis}</p>
               </div>
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <span className="text-xs font-bold text-blue-700 uppercase">金标准方案</span>
-                <p className="font-medium text-slate-800 text-xs">{evalResult.standardOfCare}</p>
+              <div className="p-4 bg-cyan-50 rounded-xl border border-cyan-100">
+                <span className="text-xs font-bold text-cyan-700 uppercase tracking-wide">金标准方案</span>
+                <p className="font-medium text-slate-700 text-sm mt-1">{evalResult.standardOfCare}</p>
               </div>
             </div>
           </div>
 
-          <button onClick={() => setStage('IDLE')} className="mt-8 w-full py-3 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-700 transition-colors">
-            完成并在病历存档
+          <button
+            onClick={() => setStage('IDLE')}
+            className="mt-8 w-full py-4 bg-gradient-to-r from-slate-800 to-slate-700 text-white font-bold rounded-xl hover:from-slate-700 hover:to-slate-600 transition-all shadow-lg cursor-pointer"
+          >
+            完成并保存病历
           </button>
         </div>
       </div>
@@ -235,58 +297,70 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
 
   return (
     <div className="h-full flex flex-col max-w-5xl mx-auto">
-      {/* Patient Header (PMS Style) */}
-      <div className="bg-slate-800 text-white p-4 rounded-t-2xl shadow-md shrink-0 flex justify-between items-center">
+      {/* Patient Header - Enhanced with gradient */}
+      <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white p-4 rounded-t-2xl shadow-lg shrink-0 flex justify-between items-center border-b border-slate-600">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center font-bold text-2xl">
+          <div className="w-12 h-12 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center font-bold text-2xl shadow-inner border border-slate-500">
             {currentCase?.species === '猫' ? '🐱' : '🐶'}
           </div>
           <div>
-            <div className="font-mono font-bold text-lg leading-none">
-              {currentCase?.breed} <span className="text-slate-400 text-sm font-normal">| {currentCase?.sex}</span>
+            <div className="font-bold text-lg leading-none flex items-center gap-2">
+              {currentCase?.breed}
+              <span className="text-slate-400 text-sm font-normal">| {currentCase?.sex}</span>
             </div>
-            <div className="text-xs text-slate-400 mt-1 font-mono">
-              ID: {currentCase?.id.slice(-6)} | {currentCase?.age} | {currentCase?.weightKg} kg
+            <div className="text-xs text-slate-400 mt-1.5 font-mono flex items-center gap-2">
+              <span className="px-1.5 py-0.5 bg-slate-600 rounded text-slate-300">ID: {currentCase?.id.slice(-6)}</span>
+              <span>{currentCase?.age}</span>
+              <span className="text-cyan-400">{currentCase?.weightKg} kg</span>
             </div>
           </div>
         </div>
         <div className="text-right hidden sm:block">
-          <div className="text-xs text-slate-400">主人特征</div>
-          <div className="font-bold text-amber-400">{currentCase?.ownerPersona}</div>
+          <div className="text-xs text-slate-400 mb-1">主人特征</div>
+          <div className="font-bold text-amber-400 bg-amber-400/10 px-3 py-1 rounded-lg text-sm">{currentCase?.ownerPersona}</div>
         </div>
       </div>
 
-      {/* Progress Stepper */}
-      <div className="bg-white border-b border-slate-200 flex overflow-x-auto shrink-0">
-        {Object.values(SOAPStage).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStage(s)}
-            className={`flex-1 py-3 text-sm font-bold whitespace-nowrap border-b-4 transition-colors px-4
-              ${stage === s ? 'border-teal-500 text-teal-800 bg-teal-50' : 'border-transparent text-slate-400 hover:bg-slate-50'}
-            `}
-          >
-            {s}
-          </button>
-        ))}
+      {/* Progress Stepper - Enhanced with colors */}
+      <div className="bg-white/95 backdrop-blur border-b border-slate-200 flex overflow-x-auto shrink-0">
+        {Object.values(SOAPStage).map((s, index) => {
+          const colors = [
+            { active: 'border-cyan-500 text-cyan-700 bg-cyan-50', hover: 'hover:bg-cyan-50/50' },
+            { active: 'border-teal-500 text-teal-700 bg-teal-50', hover: 'hover:bg-teal-50/50' },
+            { active: 'border-emerald-500 text-emerald-700 bg-emerald-50', hover: 'hover:bg-emerald-50/50' },
+            { active: 'border-green-500 text-green-700 bg-green-50', hover: 'hover:bg-green-50/50' },
+          ];
+          const colorSet = colors[index] || colors[0];
+          return (
+            <button
+              key={s}
+              onClick={() => setStage(s)}
+              className={`flex-1 py-3.5 text-sm font-bold whitespace-nowrap border-b-4 transition-all px-4 cursor-pointer
+                ${stage === s ? colorSet.active : `border-transparent text-slate-400 ${colorSet.hover}`}
+              `}
+            >
+              {s}
+            </button>
+          );
+        })}
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 bg-slate-100 overflow-y-auto p-4">
+      <div className="flex-1 bg-gradient-to-b from-slate-50 to-slate-100 overflow-y-auto p-4">
 
         {/* SUBJECTIVE STAGE - Chat Interface */}
         {stage === SOAPStage.SUBJECTIVE && (
           <div className="h-full flex flex-col gap-4 animate-pop">
 
             {/* Chat Log Window */}
-            <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 overflow-y-auto space-y-4">
+            <div className="flex-1 game-card p-4 overflow-y-auto space-y-4">
               {chatHistory.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'VET' ? 'justify-end' : 'justify-start'}`}>
+                <div key={i} className={`flex ${msg.role === 'VET' ? 'justify-end' : 'justify-start'} animate-slide-up`}>
                   <div className={`
-                     max-w-[85%] p-3 rounded-2xl text-sm font-medium leading-relaxed
+                     max-w-[85%] p-3.5 rounded-2xl text-sm font-medium leading-relaxed shadow-sm
                      ${msg.role === 'VET'
-                      ? 'bg-teal-600 text-white rounded-br-none'
-                      : 'bg-slate-100 text-slate-800 rounded-bl-none'}
+                      ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white rounded-br-sm'
+                      : 'bg-slate-100 text-slate-800 rounded-bl-sm border border-slate-200'}
                    `}>
                     {msg.text}
                   </div>
@@ -296,9 +370,9 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
             </div>
 
             {/* Interaction Area */}
-            <div className="shrink-0 bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+            <div className="shrink-0 game-card p-4">
               <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <ChatBubbleBottomCenterTextIcon className="w-5 h-5 text-teal-600" />
+                <ChatBubbleBottomCenterTextIcon className="w-5 h-5 text-cyan-600" />
                 问诊方向
               </h3>
 
@@ -311,13 +385,13 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
                       onClick={() => handleAskQuestion(idx)}
                       disabled={isAsked}
                       className={`
-                        text-left p-3 rounded-xl border text-sm font-bold transition-all
+                        text-left p-3.5 rounded-xl border text-sm font-semibold transition-all cursor-pointer
                         ${isAsked
-                          ? 'bg-slate-50 border-slate-100 text-slate-400 line-through'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-teal-50 hover:border-teal-200 hover:text-teal-800 hover:shadow-sm'}
+                          ? 'bg-slate-50 border-slate-100 text-slate-400 line-through opacity-60'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-cyan-50 hover:border-cyan-300 hover:text-cyan-800 hover:shadow-md hover:-translate-y-0.5'}
                       `}
                     >
-                      <span className="block text-xs text-slate-400 font-normal mb-0.5">{option.topic}</span>
+                      <span className="block text-xs text-cyan-600 font-medium mb-1">{option.topic}</span>
                       {option.question}
                     </button>
                   );
@@ -326,8 +400,9 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
 
               {/* Progress Button */}
               <div className="mt-4 pt-4 border-t border-slate-100 flex justify-center">
-                <button onClick={() => setStage(SOAPStage.OBJECTIVE)} className="btn-game btn-primary px-8 py-3 rounded-xl font-bold w-full sm:w-auto">
-                  问诊结束，开始体格检查 (O)
+                <button onClick={() => setStage(SOAPStage.OBJECTIVE)} className="btn-game btn-primary px-8 py-3.5 rounded-xl font-bold w-full sm:w-auto flex items-center justify-center gap-2">
+                  问诊结束，开始体格检查
+                  <ArrowRightIcon className="w-4 h-4" />
                 </button>
               </div>
             </div>
