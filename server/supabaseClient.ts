@@ -1,25 +1,43 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// 在 Netlify Functions 环境中，环境变量直接从 process.env 读取
-// 在本地开发环境中，Vite 或 server.ts 会预先加载 .env.local
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
+// 延迟初始化的 Supabase 客户端（解决 Netlify Functions 环境变量加载时序问题）
 let supabaseClient: SupabaseClient | null = null;
+let initAttempted = false;
 
-if (!supabaseUrl || !supabaseKey) {
-    console.warn('⚠️  Supabase配置未设置，将使用纯AI模式生成病例和题目');
-    console.warn('   如需使用数据库模板，请在Netlify环境变量中配置SUPABASE_URL和SUPABASE_ANON_KEY');
-    console.warn(`   当前 SUPABASE_URL: ${supabaseUrl ? '已设置' : '未设置'}`);
-    console.warn(`   当前 SUPABASE_ANON_KEY: ${supabaseKey ? '已设置' : '未设置'}`);
-} else {
+/**
+ * 获取 Supabase 客户端（延迟初始化）
+ * 在 Netlify Functions 中，环境变量在函数调用时才可用，而不是模块加载时
+ */
+export function getSupabaseClient(): SupabaseClient | null {
+    // 如果已经尝试过初始化，直接返回结果
+    if (initAttempted) {
+        return supabaseClient;
+    }
+
+    initAttempted = true;
+
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        console.warn('⚠️  Supabase配置未设置，将使用纯AI模式生成病例和题目');
+        console.warn(`   当前 SUPABASE_URL: ${supabaseUrl ? '已设置' : '未设置'}`);
+        console.warn(`   当前 SUPABASE_ANON_KEY: ${supabaseKey ? '已设置' : '未设置'}`);
+        return null;
+    }
+
     // 创建Supabase客户端
     supabaseClient = createClient(supabaseUrl, supabaseKey);
     console.log('✅ Supabase客户端初始化成功');
+    return supabaseClient;
 }
 
-// 导出客户端（可能为 null）
-export const supabase = supabaseClient;
+// 为了向后兼容，保留 supabase 导出（但现在是延迟初始化的 getter）
+export const supabase = {
+    get client() {
+        return getSupabaseClient();
+    }
+};
 
 /**
  * 病例模板数据接口
@@ -46,8 +64,9 @@ export interface CaseTemplate {
  * @returns 病例模板
  */
 export async function getRandomCaseTemplate(rank: string): Promise<CaseTemplate | null> {
-    // 如果没有配置Supabase，返回null，使用纯AI生成
-    if (!supabase) {
+    // 获取 Supabase 客户端（延迟初始化）
+    const client = getSupabaseClient();
+    if (!client) {
         console.log('[数据库] Supabase未配置，跳过模板查询，将使用纯AI生成');
         return null;
     }
@@ -61,7 +80,7 @@ export async function getRandomCaseTemplate(rank: string): Promise<CaseTemplate 
         else if (rank.includes('主任')) difficulty = 5;
 
         // 从数据库获取符合难度的模板，使用DISTINCT去重
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('case_templates')
             .select('*')
             .lte('difficulty', difficulty)
@@ -125,7 +144,8 @@ export async function getRandomExamQuestions(
     count: number = 10,
     subject?: string
 ): Promise<VetExamQuestionDB[]> {
-    if (!supabase) {
+    const client = getSupabaseClient();
+    if (!client) {
         console.warn('[数据库] Supabase未配置，无法获取考试题目');
         return [];
     }
@@ -133,7 +153,7 @@ export async function getRandomExamQuestions(
     try {
         console.log(`[调试] 开始查询题目: 数量=${count}, 科目=${subject || '全部'}`);
 
-        let query = supabase
+        let query = client
             .from('vet_exam_questions')
             .select('*')
             .eq('is_real_exam', true);
@@ -158,7 +178,7 @@ export async function getRandomExamQuestions(
 
             // 调试：尝试查询所有数据，看看表里到底有没有
             if (subject) {
-                const { count: allCount } = await supabase
+                const { count: allCount } = await client
                     .from('vet_exam_questions')
                     .select('*', { count: 'exact', head: true });
                 console.log(`[调试] 表中总记录数: ${allCount}`);
@@ -187,14 +207,15 @@ export async function getSharedStemQuestionGroups(): Promise<{
     stem: VetExamQuestionDB;
     subQuestions: VetExamQuestionDB[];
 }[]> {
-    if (!supabase) {
+    const client = getSupabaseClient();
+    if (!client) {
         console.warn('[数据库] Supabase未配置，无法获取共用题干题组');
         return [];
     }
 
     try {
         // 先获取所有题干
-        const { data: stemData, error: stemError } = await supabase
+        const { data: stemData, error: stemError } = await client
             .from('vet_exam_questions')
             .select('*')
             .eq('is_shared_stem', true);
@@ -211,7 +232,7 @@ export async function getSharedStemQuestionGroups(): Promise<{
         // 为每个题干获取子题
         const groups = await Promise.all(
             stemData.map(async (stem) => {
-                const { data: subData, error: subError } = await supabase
+                const { data: subData, error: subError } = await client
                     .from('vet_exam_questions')
                     .select('*')
                     .eq('shared_stem_id', stem.id);
@@ -242,13 +263,14 @@ export async function getSharedStemQuestionGroups(): Promise<{
  * @returns 题目对象
  */
 export async function getQuestionById(questionId: string): Promise<VetExamQuestionDB | null> {
-    if (!supabase) {
+    const client = getSupabaseClient();
+    if (!client) {
         console.warn('[数据库] Supabase未配置，无法获取题目');
         return null;
     }
 
     try {
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('vet_exam_questions')
             .select('*')
             .eq('id', questionId)
@@ -281,13 +303,14 @@ export async function recordUserAnswer(
     isCorrect: boolean,
     timeSpent: number
 ): Promise<void> {
-    if (!supabase) {
+    const client = getSupabaseClient();
+    if (!client) {
         console.warn('[数据库] Supabase未配置，无法记录答题');
         return;
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await client
             .from('user_exam_records')
             .insert({
                 user_id: userId,
