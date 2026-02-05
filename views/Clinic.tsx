@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GameState, ClinicalCase, SOAPStage, LabResultItem, GameView, CaseHistoryItem } from '../types';
+import { GameState, ClinicalCase, SOAPStage, LabResultItem, GameView, CaseHistoryItem, Rank, DiagnosisOption, TreatmentOption } from '../types';
 import { generateClinicalCase, evaluateTreatment } from '../services/apiClient';
 import {
   ClipboardDocumentCheckIcon,
@@ -116,8 +116,50 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
   const submitSOAP = async () => {
     if (!currentCase) return;
     setStage('LOADING');
+
     try {
-      const result = await evaluateTreatment(currentCase, diagnosisInput, planInput);
+      let result;
+
+      // ========== 多选题模式：本地评估（无需 AI）==========
+      const isMultipleChoiceMode = currentCase.diagnosisOptions && currentCase.diagnosisOptions.length > 0;
+
+      if (isMultipleChoiceMode) {
+        // 本地查找选中的选项
+        const selectedDiagnosis = currentCase.diagnosisOptions?.find(
+          (opt: any) => opt.text === diagnosisInput
+        );
+        const selectedTreatment = currentCase.treatmentOptions?.find(
+          (opt: any) => opt.description === planInput
+        );
+
+        // 计算分数
+        const diagnosisCorrect = selectedDiagnosis?.isCorrect ?? false;
+        const treatmentCorrect = selectedTreatment?.isCorrect ?? false;
+        const score = (diagnosisCorrect ? 50 : 0) + (treatmentCorrect ? 50 : 0);
+
+        // 构建本地评估结果
+        result = {
+          isCorrect: score >= 80,
+          score,
+          feedback: diagnosisCorrect && treatmentCorrect
+            ? '🎉 诊断和治疗方案完全正确！继续保持！'
+            : diagnosisCorrect
+              ? '⚠️ 诊断正确，但治疗方案需要改进。'
+              : treatmentCorrect
+                ? '⚠️ 治疗方向对了，但诊断有误。'
+                : '❌ 诊断和治疗都需要重新学习。',
+          correctDiagnosis: currentCase.correctDiagnosis,
+          standardOfCare: currentCase.correctTreatment,
+          diagnosisResult: diagnosisCorrect ? '✓ 正确' : '✗ 错误',
+          treatmentResult: treatmentCorrect ? '✓ 正确' : '✗ 错误'
+        };
+
+        console.log('[本地评估] 多选题模式，无需调用 AI');
+      } else {
+        // ========== 文本输入模式：调用 AI 评估 ==========
+        result = await evaluateTreatment(currentCase, diagnosisInput, planInput);
+      }
+
       setEvalResult(result);
 
       // Create History Record
@@ -130,13 +172,28 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
         userPlan: planInput
       };
 
-      // Reward Calculation
-      const moneyChange = result.isCorrect ? 300 + (result.score * 5) : -100;
-      const repChange = result.isCorrect ? 10 : -5;
+      // ========== 奖惩计算（含声望惩罚）==========
+      const baseFee = 300; // 基础诊费
+      let moneyChange = 0;
+      let repChange = 0;
+
+      if (result.isCorrect) {
+        // 完全正确：基础诊费 + 分数奖励
+        moneyChange = baseFee + (result.score * 5);
+        repChange = 10;
+      } else if (result.score >= 50) {
+        // 部分正确（诊断或治疗对了一个）：获得一半诊费，声望小扣
+        moneyChange = Math.floor(baseFee * 0.5);
+        repChange = -10;
+      } else {
+        // 严重误诊：声望 -50，赔偿诊费 ×2
+        moneyChange = -(baseFee * 2);
+        repChange = -50;
+      }
 
       updateState({
-        money: gameState.money + moneyChange,
-        reputation: gameState.reputation + repChange,
+        money: Math.max(0, gameState.money + moneyChange),
+        reputation: Math.max(0, gameState.reputation + repChange),
         experience: gameState.experience + (result.isCorrect ? result.score : 10),
         totalPatientsTreated: gameState.totalPatientsTreated + 1,
         caseHistory: [historyItem, ...gameState.caseHistory] // Add to history
@@ -296,11 +353,11 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
   }
 
   return (
-    <div className="h-full flex flex-col max-w-5xl mx-auto">
+    <div className="min-h-full flex flex-col max-w-5xl mx-auto pb-safe">
       {/* Patient Header - Enhanced with gradient */}
-      <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white p-4 rounded-t-2xl shadow-lg shrink-0 flex justify-between items-center border-b border-slate-600">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center font-bold text-2xl shadow-inner border border-slate-500">
+      <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white p-3 sm:p-4 rounded-t-2xl shadow-lg shrink-0 flex justify-between items-center border-b border-slate-600">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center font-bold text-xl sm:text-2xl shadow-inner border border-slate-500">
             {currentCase?.species === '猫' ? '🐱' : '🐶'}
           </div>
           <div>
@@ -346,18 +403,18 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 bg-gradient-to-b from-slate-50 to-slate-100 overflow-y-auto p-4">
+      <div className="flex-1 bg-gradient-to-b from-slate-50 to-slate-100 overflow-y-auto p-2 sm:p-4">
 
         {/* SUBJECTIVE STAGE - Chat Interface */}
         {stage === SOAPStage.SUBJECTIVE && (
-          <div className="h-full flex flex-col gap-4 animate-pop">
+          <div className="min-h-[60vh] flex flex-col gap-3 sm:gap-4 animate-pop">
 
             {/* Chat Log Window */}
-            <div className="flex-1 game-card p-4 overflow-y-auto space-y-4">
+            <div className="flex-1 min-h-[30vh] max-h-[40vh] sm:max-h-[50vh] game-card p-3 sm:p-4 overflow-y-auto space-y-3 sm:space-y-4">
               {chatHistory.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'VET' ? 'justify-end' : 'justify-start'} animate-slide-up`}>
                   <div className={`
-                     max-w-[85%] p-3.5 rounded-2xl text-sm font-medium leading-relaxed shadow-sm
+                     max-w-[90%] sm:max-w-[85%] p-3 sm:p-3.5 rounded-2xl text-sm font-medium leading-relaxed shadow-sm
                      ${msg.role === 'VET'
                       ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white rounded-br-sm'
                       : 'bg-slate-100 text-slate-800 rounded-bl-sm border border-slate-200'}
@@ -370,9 +427,9 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
             </div>
 
             {/* Interaction Area */}
-            <div className="shrink-0 game-card p-4">
-              <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <ChatBubbleBottomCenterTextIcon className="w-5 h-5 text-cyan-600" />
+            <div className="shrink-0 game-card p-3 sm:p-4">
+              <h3 className="font-bold text-slate-700 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                <ChatBubbleBottomCenterTextIcon className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600" />
                 问诊方向
               </h3>
 
@@ -411,15 +468,15 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
 
         {/* OBJECTIVE STAGE */}
         {stage === SOAPStage.OBJECTIVE && (
-          <div className="space-y-4 animate-pop">
+          <div className="space-y-3 sm:space-y-4 animate-pop">
 
             {/* Interactive Physical Exam Grid */}
-            <div className="game-card p-4">
-              <h3 className="flex items-center gap-2 font-bold text-slate-700 mb-4 border-b pb-2">
-                <HandRaisedIcon className="w-5 h-5 text-amber-500" />
-                五感检查 (Physical Exam)
+            <div className="game-card p-3 sm:p-4">
+              <h3 className="flex items-center gap-2 font-bold text-slate-700 mb-3 sm:mb-4 border-b pb-2 text-sm sm:text-base">
+                <HandRaisedIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
+                五感检查
               </h3>
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-3 sm:mb-4">
                 {[
                   { key: 'visual', label: '视诊', icon: EyeIcon, color: 'text-blue-500', equip: null },
                   { key: 'auscultation', label: '听诊', icon: SpeakerWaveIcon, color: 'text-red-500', equip: null },
@@ -438,7 +495,7 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
                       onClick={() => !isLocked && toggleExamReveal(item.key)}
                       disabled={isLocked}
                       className={`
-                           text-left p-3 rounded-xl border-2 transition-all relative overflow-hidden group min-h-[5rem]
+                           text-left p-2 sm:p-3 rounded-xl border-2 transition-all relative overflow-hidden group min-h-[4rem] sm:min-h-[5rem]
                            ${isLocked
                           ? 'bg-slate-100 border-slate-200 opacity-70'
                           : isRevealed
@@ -473,12 +530,12 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
             </div>
 
             {/* Basic Vitals */}
-            <div className="game-card p-4">
-              <h3 className="flex items-center gap-2 font-bold text-slate-700 mb-4 border-b pb-2">
-                <BeakerIcon className="w-5 h-5 text-red-500" />
-                基础体征 (Vitals)
+            <div className="game-card p-3 sm:p-4">
+              <h3 className="flex items-center gap-2 font-bold text-slate-700 mb-3 sm:mb-4 border-b pb-2 text-sm sm:text-base">
+                <BeakerIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
+                基础体征
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
                 <MetricBox label="体温 (T)" value={`${currentCase?.tpr.temp}°C`} highlight={currentCase!.tpr.temp > 39.2} />
                 <MetricBox label="心率 (HR)" value={`${currentCase?.tpr.hr} bpm`} highlight={currentCase!.tpr.hr > 140} />
                 <MetricBox label="呼吸 (RR)" value={`${currentCase?.tpr.rr} bpm`} />
@@ -574,53 +631,99 @@ const Clinic: React.FC<ClinicProps> = ({ gameState, updateState, onChangeView })
                 鉴别诊断 (Differential Diagnosis)
               </h3>
               <p className="text-sm text-slate-500 mb-4">
-                综合 S 与 O 的信息，列出最可能的病因。
+                综合 S 与 O 的信息，选择最可能的病因。
               </p>
 
-              <textarea
-                className="w-full h-48 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-purple-500 outline-none font-bold text-slate-700 resize-none"
-                placeholder="例如：
-1. 细小病毒肠炎 (CPV)
-2. 异物梗阻
-3. 饮食性胃肠炎"
-                value={diagnosisInput}
-                onChange={e => setDiagnosisInput(e.target.value)}
-              />
+              {/* Adaptive: Multiple choice for lower ranks */}
+              {(gameState.rank === Rank.STUDENT || gameState.rank === Rank.INTERN || gameState.rank === Rank.RESIDENT) && currentCase?.diagnosisOptions ? (
+                <div className="space-y-3">
+                  {currentCase.diagnosisOptions.map((option, idx) => (
+                    <button
+                      key={option.id}
+                      onClick={() => setDiagnosisInput(option.text)}
+                      className={`w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5
+                        ${diagnosisInput === option.text
+                          ? 'border-purple-500 bg-purple-50 text-purple-800'
+                          : 'border-slate-200 hover:border-purple-300 bg-white'}
+                      `}
+                    >
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 rounded-lg text-sm font-bold text-slate-600 mr-3">
+                        {String.fromCharCode(65 + idx)}
+                      </span>
+                      <span className="font-medium">{option.text}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                /* Text input for higher ranks */
+                <textarea
+                  className="w-full h-48 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-purple-500 outline-none font-bold text-slate-700 resize-none"
+                  placeholder="例如：\n1. 细小病毒肠炎 (CPV)\n2. 异物梗阻\n3. 饮食性胃肠炎"
+                  value={diagnosisInput}
+                  onChange={e => setDiagnosisInput(e.target.value)}
+                />
+              )}
             </div>
             <div className="text-center">
-              <button onClick={() => setStage(SOAPStage.PLAN)} className="btn-game btn-primary px-8 py-3 rounded-xl font-bold">下一步: 治疗方案 (P)</button>
+              <button
+                onClick={() => setStage(SOAPStage.PLAN)}
+                disabled={!diagnosisInput}
+                className="btn-game btn-primary px-8 py-3 rounded-xl font-bold disabled:opacity-50"
+              >
+                下一步: 治疗方案 (P)
+              </button>
             </div>
           </div>
         )}
 
         {/* PLAN STAGE */}
         {stage === SOAPStage.PLAN && (
-          <div className="space-y-4 animate-pop h-full flex flex-col">
-            <div className="game-card p-6 flex-1">
-              <h3 className="flex items-center gap-2 font-bold text-slate-700 mb-2">
-                <CalculatorIcon className="w-5 h-5 text-green-600" />
+          <div className="space-y-3 sm:space-y-4 animate-pop flex flex-col">
+            <div className="game-card p-4 sm:p-6 flex-1">
+              <h3 className="flex items-center gap-2 font-bold text-slate-700 mb-2 text-sm sm:text-base">
+                <CalculatorIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                 治疗方案 (Plan)
               </h3>
 
               <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs text-yellow-800 mb-4 flex items-center gap-2">
                 <ExclamationTriangleIcon className="w-4 h-4" />
-                注意：体重 {currentCase?.weightKg} kg。请务必计算准确 mg/kg 剂量。
+                注意：体重 {currentCase?.weightKg} kg。
               </div>
 
-              <textarea
-                className="w-full h-64 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-green-500 outline-none font-mono text-sm text-slate-700 resize-none"
-                placeholder={`Rx:
-1. 乳酸林格氏液 (LRS) ___ ml/hr
-2. 速诺 (Synulox) ___ mg SC
-3. 止吐宁 (Cerenia) ___ mg SC`}
-                value={planInput}
-                onChange={e => setPlanInput(e.target.value)}
-              />
+              {/* Adaptive: Multiple choice for lower ranks */}
+              {(gameState.rank === Rank.STUDENT || gameState.rank === Rank.INTERN) && currentCase?.treatmentOptions ? (
+                <div className="space-y-3">
+                  {currentCase.treatmentOptions.map((option, idx) => (
+                    <button
+                      key={option.id}
+                      onClick={() => setPlanInput(option.description)}
+                      className={`w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5
+                        ${planInput === option.description
+                          ? 'border-green-500 bg-green-50 text-green-800'
+                          : 'border-slate-200 hover:border-green-300 bg-white'}
+                      `}
+                    >
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 rounded-lg text-sm font-bold text-slate-600 mr-3">
+                        {String.fromCharCode(65 + idx)}
+                      </span>
+                      <span className="font-medium text-sm">{option.description}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                /* Text input for higher ranks */
+                <textarea
+                  className="w-full h-64 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-green-500 outline-none font-mono text-sm text-slate-700 resize-none"
+                  placeholder={`Rx:\n1. 乳酸林格氏液 (LRS) ___ ml/hr\n2. 速诺 (Synulox) ___ mg SC\n3. 止吐宁 (Cerenia) ___ mg SC`}
+                  value={planInput}
+                  onChange={e => setPlanInput(e.target.value)}
+                />
+              )}
             </div>
             <button
               onClick={submitSOAP}
               disabled={!diagnosisInput || !planInput}
-              className="btn-game btn-primary w-full py-4 rounded-xl font-bold text-lg shadow-xl"
+              className="btn-game btn-primary w-full py-4 rounded-xl font-bold text-lg shadow-xl disabled:opacity-50"
             >
               提交完整病历
             </button>

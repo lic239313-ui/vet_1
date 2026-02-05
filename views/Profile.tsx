@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GameState, RANK_THRESHOLDS, Rank, CaseHistoryItem, INITIAL_GAME_STATE } from '../types';
 import { generateQualificationExam } from '../services/apiClient';
+import TalentTree from './TalentTree';
 import {
   TrophyIcon,
   StarIcon,
@@ -14,7 +15,8 @@ import {
   ClipboardDocumentListIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  BoltIcon
 } from '@heroicons/react/24/solid';
 
 interface ProfileProps {
@@ -28,6 +30,7 @@ const Profile: React.FC<ProfileProps> = ({ gameState, updateState }) => {
   const [currentQIdx, setCurrentQIdx] = useState(0);
   const [examScore, setExamScore] = useState(0);
   const [examPassed, setExamPassed] = useState(false);
+  const [showTalentTree, setShowTalentTree] = useState(false);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
 
   const currentExpThreshold = RANK_THRESHOLDS[gameState.rank as Rank] || 0;
@@ -163,6 +166,30 @@ const Profile: React.FC<ProfileProps> = ({ gameState, updateState }) => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Talent Tree Button */}
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <button
+              onClick={() => setShowTalentTree(true)}
+              className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200 hover:border-purple-400 hover:shadow-md transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                  <BoltIcon className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-left">
+                  <div className="font-bold text-slate-800">技能树</div>
+                  <div className="text-xs text-slate-500">选择你的专精方向</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-bold">
+                  {gameState.skillPoints ?? 0} SP
+                </span>
+                <ChevronDownIcon className="w-5 h-5 text-slate-400 -rotate-90" />
+              </div>
+            </button>
           </div>
         </div>
 
@@ -403,6 +430,15 @@ const Profile: React.FC<ProfileProps> = ({ gameState, updateState }) => {
           </>
         )}
       </div>
+
+      {/* Talent Tree Modal */}
+      {showTalentTree && (
+        <TalentTree
+          gameState={gameState}
+          updateState={updateState}
+          onClose={() => setShowTalentTree(false)}
+        />
+      )}
     </div>
   );
 };

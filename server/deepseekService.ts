@@ -101,7 +101,81 @@ export async function generateClinicalCase(rank: string): Promise<any> {
   let userPrompt = '';
 
   if (template) {
-    // 基于模板生成病例
+    // 判断是否为低难度（多选题模式）
+    const isLowDifficulty = template.difficulty <= 3;
+
+    if (isLowDifficulty) {
+      // ========== 低难度优化：直接复用模板数据 ==========
+      // AI 只需要生成：品种、年龄、体重、问诊对话、选项
+      systemPrompt = `
+你是兽医教授。基于疾病模板生成**简化**临床病例JSON。
+语言：中文。格式：JSON。**极简输出**。
+
+**只需生成以下字段**（其他字段已从模板获取）：
+1. breed：随机选择适合该物种的常见品种
+2. age：合理的年龄（如"3岁"）
+3. sex：公/母
+4. weightKg：合理的体重（kg）
+5. ownerPersona：宠物主人性格（一词概括）
+6. historySecret：简短病史（10字以内）
+7. dialogue：2个问诊对话
+8. diagnosisOptions：4个诊断选项（1正确+3干扰）
+9. treatmentOptions：2个治疗选项（1正确+1干扰）
+
+JSON结构：
+{
+  "breed": "品种",
+  "age": "年龄",
+  "sex": "公/母",
+  "weightKg": number,
+  "ownerPersona": "性格",
+  "historySecret": "病史",
+  "dialogue": [{"question":"问题","answer":"回答","topic":"话题"}],
+  "diagnosisOptions": [
+    {"id":"d1","text":"正确诊断","isCorrect":true},
+    {"id":"d2","text":"干扰项1","isCorrect":false},
+    {"id":"d3","text":"干扰项2","isCorrect":false},
+    {"id":"d4","text":"干扰项3","isCorrect":false}
+  ],
+  "treatmentOptions": [
+    {"id":"t1","description":"正确治疗","isCorrect":true},
+    {"id":"t2","description":"错误方案","isCorrect":false}
+  ]
+}
+      `.trim();
+
+      userPrompt = `
+疾病：${template.disease_name}
+物种：${template.species}
+正确诊断：${template.correct_diagnosis}
+正确治疗：${template.treatment_guidelines?.substring(0, 100)}...
+
+请生成个体差异数据和多选选项。
+      `.trim();
+
+      // 调用 AI 获取简化数据
+      const aiData = await callDeepSeek(systemPrompt, userPrompt);
+
+      // 合并模板数据和 AI 生成的数据
+      return {
+        id: Date.now().toString(),
+        // 直接复用模板数据
+        species: template.species,
+        chiefComplaint: template.typical_symptoms.chiefComplaint,
+        physicalExam: template.typical_symptoms.physicalExam,
+        tpr: template.typical_symptoms.tpr,
+        cbcSummary: template.lab_patterns?.cbc ? JSON.stringify(template.lab_patterns.cbc) : '未见明显异常',
+        chemSummary: template.lab_patterns?.chem ? JSON.stringify(template.lab_patterns.chem) : '未见明显异常',
+        xraySummary: template.lab_patterns?.['其他检查'] || '未进行',
+        difficulty: template.difficulty,
+        correctDiagnosis: template.correct_diagnosis,
+        correctTreatment: template.treatment_guidelines,
+        // AI 生成的个体差异
+        ...aiData
+      };
+    }
+
+    // ========== 高难度：完整 AI 生成 ==========
     systemPrompt = `
 你是兽医教授。基于疾病模板生成临床病例JSON，用于${rank}级别考核。
 语言：中文。格式：JSON。**极简输出**。
@@ -157,6 +231,7 @@ JSON结构：
 2. dialogue只需2个关键问诊
 3. physicalExam每项最多15字
 4. cbcSummary和chemSummary用一句话概括
+5. **必须包含诊断选项和治疗选项**
 
 JSON结构：
 {
@@ -174,7 +249,19 @@ JSON结构：
   "cbcSummary": "WBC↑，HCT正常",
   "chemSummary": "ALT↑，肾功能正常",
   "xraySummary": "X光所见",
-  "difficulty": number
+  "difficulty": number,
+  "correctDiagnosis": "正确诊断名称",
+  "correctTreatment": "正确治疗方案",
+  "diagnosisOptions": [
+    {"id":"d1","text":"正确诊断","isCorrect":true},
+    {"id":"d2","text":"干扰项1","isCorrect":false},
+    {"id":"d3","text":"干扰项2","isCorrect":false},
+    {"id":"d4","text":"干扰项3","isCorrect":false}
+  ],
+  "treatmentOptions": [
+    {"id":"t1","description":"正确治疗方案","isCorrect":true},
+    {"id":"t2","description":"错误方案","isCorrect":false}
+  ]
 }
     `.trim();
 

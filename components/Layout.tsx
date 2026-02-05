@@ -7,7 +7,8 @@ import {
   UserCircleIcon,
   CurrencyYenIcon,
   StarIcon,
-  BoltIcon
+  BoltIcon,
+  SparklesIcon
 } from '@heroicons/react/24/solid';
 
 interface LayoutProps {
@@ -55,6 +56,15 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, ga
               bgColor="bg-cyan-50"
               label="精力"
             />
+            <div className="hidden md:flex">
+              <StatPill
+                icon={SparklesIcon}
+                value={gameState.skillPoints ?? 0}
+                color="text-purple-500"
+                bgColor="bg-purple-50"
+                label="技能点"
+              />
+            </div>
             <div className="hidden md:flex">
               <StatPill
                 icon={StarIcon}

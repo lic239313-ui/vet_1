@@ -94,6 +94,12 @@ export interface ClinicalCase {
 
   // Assessment Logic
   difficulty: number;
+
+  // Adaptive Diagnosis - Multiple Choice Options (for lower ranks)
+  diagnosisOptions?: DiagnosisOption[];  // 4-6 options based on rank
+  treatmentOptions?: TreatmentOption[];  // 2-3 options based on rank
+  correctDiagnosis?: string;             // The correct diagnosis for evaluation
+  correctTreatment?: string;             // The correct treatment for evaluation
 }
 
 export interface EvaluationResult {
@@ -149,6 +155,53 @@ export interface QuizQuestion {
   explanation: string;
 }
 
+// ============== Adaptive Diagnosis Types ==============
+
+export interface DiagnosisOption {
+  id: string;
+  text: string;        // 诊断选项文本
+  isCorrect: boolean;  // 是否正确
+}
+
+export interface TreatmentOption {
+  id: string;
+  description: string; // 治疗方案描述
+  isCorrect: boolean;
+}
+
+// ============== Talent Tree Types ==============
+
+export type TalentBranch = 'clinical' | 'management' | 'academic';
+
+export interface TalentEffect {
+  type: 'xp_bonus' | 'money_bonus' | 'rep_bonus' | 'hint' | 'tolerance' | 'unlock' | 'tip_bonus';
+  value: number;          // 加成百分比或固定值
+  condition?: string;     // 触发条件 (如 'score>=90')
+}
+
+export interface TalentNode {
+  id: string;
+  name: string;
+  description: string;
+  branch: TalentBranch;
+  tier: number;           // 1-5
+  cost: number;           // 技能点消耗
+  unlocked: boolean;
+  prerequisite?: string;  // 前置技能 ID
+  effect: TalentEffect;
+}
+
+// ============== Milestone Tracking ==============
+
+export interface MilestoneProgress {
+  totalCured: number;           // 里程碑: 治愈病例数
+  perfectScores: number;        // 满分诊断次数
+  curedMilestones: number[];    // 已达成的治愈里程碑 [10, 25, 50, 100]
+  perfectMilestones: number[];  // 已达成的满分里程碑 [5, 10, 20]
+}
+
+// ============== Game State ==============
+
 export interface GameState {
   money: number;
   reputation: number;
@@ -159,6 +212,11 @@ export interface GameState {
   inventory: Equipment[];
   totalPatientsTreated: number;
   caseHistory: CaseHistoryItem[];
+
+  // New: Talent System
+  skillPoints: number;
+  talents: TalentNode[];
+  milestones: MilestoneProgress;
 }
 
 export const INITIAL_EQUIPMENT: Equipment[] = [
@@ -302,8 +360,134 @@ export const RANK_THRESHOLDS = {
   [Rank.CHIEF]: 15000,
 };
 
+// Skill Point acquisition milestones
+export const CURE_MILESTONES = [10, 25, 50, 100];
+export const PERFECT_MILESTONES = [5, 10, 20];
+
+export const INITIAL_TALENTS: TalentNode[] = [
+  // ============== Clinical Branch ==============
+  {
+    id: 'clinical_t1_observation',
+    name: '敏锐观察',
+    description: '检查时自动高亮异常关键词',
+    branch: 'clinical',
+    tier: 1,
+    cost: 1,
+    unlocked: false,
+    effect: { type: 'hint', value: 1 }
+  },
+  {
+    id: 'clinical_t4_healing',
+    name: '妙手回春',
+    description: '治疗评分容错 +10%',
+    branch: 'clinical',
+    tier: 4,
+    cost: 3,
+    unlocked: false,
+    prerequisite: 'clinical_t1_observation',
+    effect: { type: 'tolerance', value: 10 }
+  },
+  {
+    id: 'clinical_t5_specialist',
+    name: '专科圣手',
+    description: '解锁疑难杂症 (XP ×2)',
+    branch: 'clinical',
+    tier: 5,
+    cost: 5,
+    unlocked: false,
+    prerequisite: 'clinical_t4_healing',
+    effect: { type: 'unlock', value: 2 }
+  },
+
+  // ============== Management Branch ==============
+  {
+    id: 'mgmt_t1_affinity',
+    name: '亲和力',
+    description: '诊断准确率 ≥90% 时获得小费 (+10% 诊费)',
+    branch: 'management',
+    tier: 1,
+    cost: 1,
+    unlocked: false,
+    effect: { type: 'tip_bonus', value: 10, condition: 'score>=90' }
+  },
+  {
+    id: 'mgmt_t3_negotiation',
+    name: '商业谈判',
+    description: '设备价格 -10%',
+    branch: 'management',
+    tier: 3,
+    cost: 3,
+    unlocked: false,
+    prerequisite: 'mgmt_t1_affinity',
+    effect: { type: 'money_bonus', value: -10 }
+  },
+  {
+    id: 'mgmt_t4_starDirector',
+    name: '明星院长',
+    description: '声望获取 +20%',
+    branch: 'management',
+    tier: 4,
+    cost: 3,
+    unlocked: false,
+    prerequisite: 'mgmt_t3_negotiation',
+    effect: { type: 'rep_bonus', value: 20 }
+  },
+  {
+    id: 'mgmt_t5_franchise',
+    name: '连锁巨头',
+    description: '解锁分院系统',
+    branch: 'management',
+    tier: 5,
+    cost: 5,
+    unlocked: false,
+    prerequisite: 'mgmt_t4_starDirector',
+    effect: { type: 'unlock', value: 1 }
+  },
+
+  // ============== Academic Branch ==============
+  {
+    id: 'academic_t1_scholar',
+    name: '学霸',
+    description: 'XP 获取 +10%',
+    branch: 'academic',
+    tier: 1,
+    cost: 1,
+    unlocked: false,
+    effect: { type: 'xp_bonus', value: 10 }
+  },
+  {
+    id: 'academic_t2_research',
+    name: '文献检索',
+    description: '消耗精力获取疾病类别提示',
+    branch: 'academic',
+    tier: 2,
+    cost: 2,
+    unlocked: false,
+    prerequisite: 'academic_t1_scholar',
+    effect: { type: 'hint', value: 1 }
+  },
+  {
+    id: 'academic_t3_teaching',
+    name: '教学相长',
+    description: '助手经验 +50%',
+    branch: 'academic',
+    tier: 3,
+    cost: 3,
+    unlocked: false,
+    prerequisite: 'academic_t2_research',
+    effect: { type: 'xp_bonus', value: 50 }
+  }
+];
+
+export const INITIAL_MILESTONES: MilestoneProgress = {
+  totalCured: 0,
+  perfectScores: 0,
+  curedMilestones: [],
+  perfectMilestones: []
+};
+
 export const INITIAL_GAME_STATE: GameState = {
-  money: 5000, // Higher starting money for equipment
+  money: 5000,
   reputation: 50,
   experience: 0,
   rank: Rank.STUDENT,
@@ -311,7 +495,10 @@ export const INITIAL_GAME_STATE: GameState = {
   maxEnergy: 100,
   inventory: INITIAL_EQUIPMENT,
   totalPatientsTreated: 0,
-  caseHistory: []
+  caseHistory: [],
+  skillPoints: 0,
+  talents: INITIAL_TALENTS,
+  milestones: INITIAL_MILESTONES
 };
 
 export interface QuizQuestion {
