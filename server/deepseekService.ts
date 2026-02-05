@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { getRandomCaseTemplate, CaseTemplate } from './supabaseClient';
 
 // DeepSeek API配置

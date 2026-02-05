@@ -5,12 +5,31 @@ let deepseekService: any;
 
 const loadServices = async () => {
     if (!deepseekService) {
-        deepseekService = await import('../../server/deepseekService');
+        try {
+            console.log('[Netlify Function] Importing deepseekService...');
+            deepseekService = await import('../../server/deepseekService');
+            console.log('[Netlify Function] deepseekService imported successfully');
+        } catch (error: any) {
+            console.error('[Netlify Function] Failed to import deepseekService:', error);
+            throw new Error(`Service import failed: ${error.message}`);
+        }
     }
 };
 
 export const handler: Handler = async (event, context) => {
-    // 只允许 POST 请求
+    // 允许跨域预检请求
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+            },
+            body: ''
+        };
+    }
+
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
@@ -20,86 +39,99 @@ export const handler: Handler = async (event, context) => {
 
     try {
         // 🔍 环境变量检查
-        const hasDeepSeek = !!process.env.DEEPSEEK_API_KEY;
-        const hasSupabase = !!process.env.SUPABASE_URL && !!process.env.SUPABASE_ANON_KEY;
+        const apiKey = process.env.DEEPSEEK_API_KEY;
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-        console.log('[Netlify Function] 环境变量状态:');
-        console.log(`  - DEEPSEEK_API_KEY: ${hasDeepSeek ? '✅ 已配置' : '❌ 未配置'}`);
-        console.log(`  - SUPABASE_URL: ${process.env.SUPABASE_URL ? '✅ 已配置' : '❌ 未配置'}`);
-        console.log(`  - SUPABASE_ANON_KEY: ${process.env.SUPABASE_ANON_KEY ? '✅ 已配置' : '❌ 未配置'}`);
+        const debugInfo = {
+            hasDeepSeekKey: !!apiKey,
+            deepSeekKeyLength: apiKey ? apiKey.length : 0,
+            hasSupabaseUrl: !!supabaseUrl,
+            hasSupabaseKey: !!supabaseKey,
+            nodeVersion: process.version,
+            region: process.env.AWS_REGION || 'unknown'
+        };
 
-        // 如果 DeepSeek API Key 缺失，提前返回错误
-        if (!hasDeepSeek) {
-            console.error('[Netlify Function] ❌ DEEPSEEK_API_KEY 未配置！');
+        console.log('[Netlify Function] Environment Debug:', JSON.stringify(debugInfo));
+
+        if (!apiKey) {
+            console.error('[Netlify Function] ❌ DEEPSEEK_API_KEY Missing');
             return {
                 statusCode: 500,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    error: '服务器配置错误',
-                    message: 'DeepSeek API密钥未配置，请在Netlify环境变量中设置DEEPSEEK_API_KEY',
-                    debug: {
-                        hasDeepSeek,
-                        hasSupabase
-                    }
+                    error: 'Configuration Error',
+                    message: 'DeepSeek API Key is missing in Netlify environment variables.',
+                    debug: debugInfo
                 })
             };
         }
 
         // 加载服务模块
-        console.log('[Netlify Function] 正在加载服务模块...');
         await loadServices();
 
         // 解析请求体
-        const { rank } = JSON.parse(event.body || '{}');
+        let body;
+        try {
+            body = JSON.parse(event.body || '{}');
+        } catch (e) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Invalid JSON body' })
+            };
+        }
+
+        const { rank } = body;
 
         if (!rank) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: '缺少参数: rank' })
+                body: JSON.stringify({ error: 'Missing parameter: rank' })
             };
         }
 
-        console.log(`[Netlify Function] 开始为 ${rank} 生成病例...`);
+        console.log(`[Netlify Function] Generating case for rank: ${rank}`);
         const startTime = Date.now();
 
         // 调用生成病例服务
         const clinicalCase = await deepseekService.generateClinicalCase(rank);
 
         const duration = Date.now() - startTime;
-        console.log(`[Netlify Function] ✅ 病例生成成功！用时: ${duration}ms, ID: ${clinicalCase.id}`);
+        console.log(`[Netlify Function] ✅ Success! Duration: ${duration}ms`);
 
         return {
             statusCode: 200,
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             body: JSON.stringify(clinicalCase)
         };
     } catch (error: any) {
-        console.error('[Netlify Function] ❌ 病例生成失败:');
-        console.error('  错误类型:', error.name);
-        console.error('  错误消息:', error.message);
-        console.error('  错误堆栈:', error.stack);
+        console.error('[Netlify Function] ❌ Error:', error);
 
-        // 检查是否是超时错误
-        const isTimeout = error.message?.includes('timeout') || error.message?.includes('ETIMEDOUT');
-        const isNetworkError = error.message?.includes('fetch') || error.message?.includes('network');
+        // 详细错误分析
+        const errorDetails = {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+            isTimeout: error.message?.includes('timeout') || error.message?.includes('ETIMEDOUT'),
+            isNetwork: error.message?.includes('fetch') || error.message?.includes('network')
+        };
 
         return {
             statusCode: 500,
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             body: JSON.stringify({
-                error: '病例生成失败',
+                error: 'Case Generation Failed',
                 message: error.message,
-                type: isTimeout ? 'timeout' : isNetworkError ? 'network' : 'unknown',
-                hint: isTimeout
-                    ? 'DeepSeek API 响应超时，请稍后重试'
-                    : isNetworkError
-                        ? 'DeepSeek API 网络连接失败，请检查API密钥是否有效'
-                        : '未知错误，请查看服务器日志',
-                debug: process.env.NODE_ENV === 'development' ? error.stack : undefined
+                details: errorDetails,
+                hint: errorDetails.isTimeout
+                    ? 'The AI service timed out. Please try again.'
+                    : 'An internal server error occurred. Check the details for more info.'
             })
         };
     }
